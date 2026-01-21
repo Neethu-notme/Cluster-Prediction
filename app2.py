@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-
+from datetime import datetime
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
@@ -15,11 +15,27 @@ st.write("Predict which customer cluster a user belongs to")
 # --------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("marketing_campaign.csv")   # update if name differs
+    df = pd.read_csv("C:\Users\neeth\Downloads\marketing_campaign.csv")   # update if name differs
     return df
 
 df = load_data()
 
+df_filled = df.fillna(df.mean(numeric_only=True))
+# --------------------------------------------------
+# Outlier capping 
+# --------------------------------------------------
+ 
+def outlier_capping(df_filled, column): 
+    Q1 = df_filled[column].quantile(0.25) 
+    Q3 = df_filled[column].quantile(0.75) 
+    IQR = Q3-Q1 
+    l_e = Q1-1.5*IQR 
+    u_e = Q3+1.5*IQR 
+    
+    df_filled[column] = df_filled[column].apply(lambda x: l_e if x<l_e else u_e if x>u_e else x) 
+
+for col in df_filled.select_dtypes(['int', 'float']): 
+    outlier_capping(df_filled, col)
 # --------------------------------------------------
 # Select features
 # --------------------------------------------------
@@ -34,16 +50,36 @@ df_model = df[cat_features + num_features].dropna()
 df_encoded = pd.get_dummies(df_model, columns=cat_features, drop_first=True)
 
 # --------------------------------------------------
+# Feature engineering
+# --------------------------------------------------
+current_year = datetime.now().year
+df_filled['Age'] = current_year - df_filled['Year_Birth']
+
+df_filled.drop(columns=['Year_Birth'], inplace=True)
+
+df_filled['Children'] = df_filled['Kidhome'] + df_filled['Teenhome']
+
+df_filled['TotalSpend'] = (df_filled['MntWines'] + df_filled['MntFruits'] + df_filled['MntMeatProducts'] + df_filled['MntFishProducts'] + df_filled['MntSweetProducts'] + 
+                    df_filled['MntGoldProds'])
+
+df_filled['TotalPurchases'] = (df_filled['NumWebPurchases'] + df_filled['NumCatalogPurchases'] + df_filled['NumStorePurchases'])
+
+# --------------------------------------------------
 # Scaling
 # --------------------------------------------------
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(df_encoded)
+
+num_cols = df_filled.select_dtypes(include=['int64', 'float64']).columns.tolist()
+cat_cols = df_filled.select_dtypes(include=['object']).columns.tolist()
+
+scaler_standard = StandardScaler()
+df_standard = df_filled.copy(num_cols)
+df_standard[num_cols] = scaler_standard.fit_transform(df_standard[num_cols])
 
 # --------------------------------------------------
 # Train KMeans
 # --------------------------------------------------
 kmeans = KMeans(n_clusters=2, random_state=42)
-kmeans.fit(X_scaled)
+kmeans.fit(df_standard[num_cols])
 
 # --------------------------------------------------
 # USER INPUT
@@ -70,7 +106,7 @@ input_encoded = pd.get_dummies(input_df, columns=cat_features, drop_first=True)
 input_encoded = input_encoded.reindex(columns=df_encoded.columns, fill_value=0)
 
 # Scale input
-input_scaled = scaler.transform(input_encoded)
+input_scaled = scaler_standard.transform(input_encoded)
 
 # --------------------------------------------------
 # Prediction
