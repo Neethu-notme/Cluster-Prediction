@@ -15,7 +15,7 @@ st.write("Predict which customer cluster a user belongs to")
 # --------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("marketing_campaign.csv")   # update if name differs
+    df = pd.read_csv("C:\Users\neeth\Downloads\marketing_campaign.csv")   # update if name differs
     return df
 
 df = load_data()
@@ -49,6 +49,8 @@ df_model = df[cat_features + num_features].dropna()
 # --------------------------------------------------
 df_encoded = pd.get_dummies(df_model, columns=cat_features, drop_first=True)
 
+
+
 # --------------------------------------------------
 # Feature engineering
 # --------------------------------------------------
@@ -75,6 +77,19 @@ scaler_standard = StandardScaler()
 df_standard = df_filled.copy(num_cols)
 df_standard[num_cols] = scaler_standard.fit_transform(df_standard[num_cols])
 
+
+# One-hot encode user input
+input_encoded = pd.get_dummies(
+    df_standard[num_cols],
+    columns=cat_features,
+    drop_first=True
+)
+
+# Align input columns with training columns
+input_encoded = input_encoded.reindex(
+    columns=df_encoded.columns,
+    fill_value=0
+)
 # --------------------------------------------------
 # Train KMeans
 # --------------------------------------------------
@@ -120,4 +135,3 @@ if st.button("🔮 Predict Cluster"):
         st.info("Cluster 0: Likely lower spending / conservative customers")
     else:
         st.info("Cluster 1: Likely higher spending / responsive customers")
-
