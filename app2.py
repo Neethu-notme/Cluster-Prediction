@@ -20,13 +20,11 @@ def load_data():
 
 df = load_data()
 
-df_filled = df.fillna(df.mean(numeric_only=True))
-
 
 # Train KMeans
 # --------------------------------------------------
 kmeans = KMeans(n_clusters=2, random_state=42)
-kmeans.fit(df_filled)
+kmeans.fit(df)
 
 # --------------------------------------------------
 # USER INPUT
@@ -67,6 +65,7 @@ if st.button("🔮 Predict Cluster"):
         st.info("Cluster 0: Likely lower spending / conservative customers")
     else:
         st.info("Cluster 1: Likely higher spending / responsive customers")
+
 
 
 
