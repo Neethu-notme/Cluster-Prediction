@@ -15,83 +15,18 @@ st.write("Predict which customer cluster a user belongs to")
 # --------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("marketing_campaign.csv")   # update if name differs
+    df = pd.read_csv("customer_cluster_output.csv")   # update if name differs
     return df
 
 df = load_data()
 
 df_filled = df.fillna(df.mean(numeric_only=True))
-# --------------------------------------------------
-# Outlier capping 
-# --------------------------------------------------
- 
-def outlier_capping(df_filled, column): 
-    Q1 = df_filled[column].quantile(0.25) 
-    Q3 = df_filled[column].quantile(0.75) 
-    IQR = Q3-Q1 
-    l_e = Q1-1.5*IQR 
-    u_e = Q3+1.5*IQR 
-    
-    df_filled[column] = df_filled[column].apply(lambda x: l_e if x<l_e else u_e if x>u_e else x) 
-
-for col in df_filled.select_dtypes(['int', 'float']): 
-    outlier_capping(df_filled, col)
-# --------------------------------------------------
-# Select features
-# --------------------------------------------------
-cat_features = ["Education", "Marital_Status"]
-num_features = ["Income"]
-
-df_model = df[cat_features + num_features].dropna()
-
-# --------------------------------------------------
-# Encoding categorical variables
-# --------------------------------------------------
-df_encoded = pd.get_dummies(df_model, columns=cat_features, drop_first=True)
 
 
-
-# --------------------------------------------------
-# Feature engineering
-# --------------------------------------------------
-current_year = datetime.now().year
-df_filled['Age'] = current_year - df_filled['Year_Birth']
-
-df_filled.drop(columns=['Year_Birth'], inplace=True)
-
-df_filled['Children'] = df_filled['Kidhome'] + df_filled['Teenhome']
-
-df_filled['TotalSpend'] = (df_filled['MntWines'] + df_filled['MntFruits'] + df_filled['MntMeatProducts'] + df_filled['MntFishProducts'] + df_filled['MntSweetProducts'] + 
-                    df_filled['MntGoldProds'])
-
-df_filled['TotalPurchases'] = (df_filled['NumWebPurchases'] + df_filled['NumCatalogPurchases'] + df_filled['NumStorePurchases'])
-
-# --------------------------------------------------
-# Scaling
-# --------------------------------------------------
-
-num_cols = df_filled.select_dtypes(include=['int64', 'float64']).columns.tolist()
-cat_cols = df_filled.select_dtypes(include=['object']).columns.tolist()
-
-scaler_standard = StandardScaler()
-df_standard = df_filled.copy(num_cols)
-df_standard[num_cols] = scaler_standard.fit_transform(df_standard[num_cols])
-
-input_encoded = pd.get_dummies(
-    df_standard[num_cols + cat_cols],  # include categorical columns
-    columns=cat_features,
-    drop_first=True
-)
-# Align input columns with training columns
-input_encoded = input_encoded.reindex(
-    columns=df_encoded.columns,
-    fill_value=0
-)
-# --------------------------------------------------
 # Train KMeans
 # --------------------------------------------------
 kmeans = KMeans(n_clusters=2, random_state=42)
-kmeans.fit(df_standard[num_cols])
+kmeans.fit(df_filled)
 
 # --------------------------------------------------
 # USER INPUT
@@ -132,5 +67,6 @@ if st.button("🔮 Predict Cluster"):
         st.info("Cluster 0: Likely lower spending / conservative customers")
     else:
         st.info("Cluster 1: Likely higher spending / responsive customers")
+
 
 
