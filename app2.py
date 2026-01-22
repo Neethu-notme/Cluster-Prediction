@@ -15,7 +15,7 @@ st.write("Predict which customer cluster a user belongs to")
 # --------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("customer_cluster_output.csv")   # update if name differs
+    df = pd.read_csv("customer_clusters_output.csv")   # update if name differs
     return df
 
 df = load_data()
@@ -67,6 +67,7 @@ if st.button("🔮 Predict Cluster"):
         st.info("Cluster 0: Likely lower spending / conservative customers")
     else:
         st.info("Cluster 1: Likely higher spending / responsive customers")
+
 
 
 
