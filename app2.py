@@ -77,14 +77,11 @@ scaler_standard = StandardScaler()
 df_standard = df_filled.copy(num_cols)
 df_standard[num_cols] = scaler_standard.fit_transform(df_standard[num_cols])
 
-
-# One-hot encode user input
 input_encoded = pd.get_dummies(
-    df_standard[num_cols],
+    df_standard[num_cols + cat_cols],  # include categorical columns
     columns=cat_features,
     drop_first=True
 )
-
 # Align input columns with training columns
 input_encoded = input_encoded.reindex(
     columns=df_encoded.columns,
@@ -135,4 +132,5 @@ if st.button("🔮 Predict Cluster"):
         st.info("Cluster 0: Likely lower spending / conservative customers")
     else:
         st.info("Cluster 1: Likely higher spending / responsive customers")
+
 
